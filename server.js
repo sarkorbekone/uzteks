@@ -1,7 +1,22 @@
 const express = require('express');
 const os = require('os');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// D.P8 — Improvement 1: Gzip compression (reduces response size ~60-70%)
+app.use(compression());
+
+// D.P8 — Improvement 2: Rate limiting (100 req/min per IP, protects against abuse)
+const limiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/order', limiter);
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -16,6 +31,9 @@ const products = [
 ];
 
 app.get('/', (req, res) => {
+  // D.P8 — Improvement 3: Cache-Control header (1 hour for catalogue page)
+  res.set('Cache-Control', 'public, max-age=3600');
+
   const rows = products.map(p => `
     <tr>
       <td>${p.id}</td>
@@ -122,6 +140,7 @@ h2{color:#1a56db;margin-bottom:12px;} p{color:#555;margin:8px 0;} a{color:#1a56d
 
 // Load balancer health check
 app.get('/health', (req, res) => {
+  res.set('Cache-Control', 'no-store');
   res.json({ status: 'ok', hostname: os.hostname(), uptime: process.uptime() });
 });
 
