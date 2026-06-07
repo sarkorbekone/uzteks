@@ -1,0 +1,12 @@
+{
+  "name": "uzteks-wholesale",
+  "version": "1.0.0",
+  "description": "UzTeks Wholesale - Cloud networking demo app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
