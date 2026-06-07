@@ -1,0 +1,44 @@
+name: UzTeks CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Syntax check — server.js
+        run: node --check server.js
+
+      - name: Verify required modules load
+        run: node -e "require('express'); require('compression'); require('express-rate-limit'); console.log('All modules OK');"
+
+      - name: Check health endpoint responds
+        run: |
+          node server.js &
+          SERVER_PID=$!
+          sleep 3
+          curl -sf http://localhost:3000/health | grep '"status":"ok"'
+          kill $SERVER_PID
+        env:
+          PORT: 3000
+
+      - name: Confirm deployment target
+        run: echo "CI passed — DigitalOcean App Platform will auto-deploy from this push."
